@@ -7,7 +7,7 @@
 - Explore correlations between team stats (e.g., offensive yards, defensive turnovers, salary cap allocation per position) and win totals over
   multiple seasons.
 - Use regression or classification in R to identify variables most strongly associated with winning records.  
-  [R Code](./nfl/factors_of_team_success.R)
+  [R Code](./factors_of_team_success.R)
 
 <details>
 <summary><strong>Analysis Steps for this question</strong></summary>
