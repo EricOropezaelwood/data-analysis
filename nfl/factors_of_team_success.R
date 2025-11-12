@@ -61,3 +61,8 @@ team_stats_season <- team_stats_season_agg %>%
 # Convert character columns to factors for modeling work
 team_stats_season <- team_stats_season %>%
   mutate(across(where(is.character), as.factor))
+
+# Fit multiple linear regression model
+# Wins as dependent variable, all other numeric variables as predictors
+lm_model <- lm(wins ~ . - season - team - week - losses - ties,
+               data = team_stats_season)
