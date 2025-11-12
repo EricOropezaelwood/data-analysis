@@ -1,5 +1,7 @@
 library(nflreadr)
 library(dplyr)
+library(ggplot2)
+library(corrplot)
 
 # Set seasons for analysis
 years <- c(2022, 2023, 2024, 2025)
@@ -123,9 +125,57 @@ if(rows_removed > 0) {
 cat("\nFinal dimensions:", nrow(team_stats_clean), "rows,", ncol(team_stats_clean), "columns\n")
 cat("=== End Cleaning Report ===\n\n")
 
+# Correlation Heatmap
+# ============================================================
+
+# Select only numeric columns for correlation analysis
+numeric_data <- team_stats_clean %>%
+  select(where(is.numeric))
+
+# Remove loss and tie columns
+numeric_data <- numeric_data %>%
+  select(-loss, -tie)
+
+# Calculate correlation matrix
+cor_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Create correlation heatmap focusing on correlations with 'win'
+# Sort variables by correlation with win for better visualization
+win_correlations <- cor_matrix[, "win"]
+win_correlations <- win_correlations[order(abs(win_correlations), decreasing = TRUE)]
+top_vars <- names(win_correlations)[seq_len(min(30, length(win_correlations)))]  # Top 30 variables
+
+# Subset correlation matrix to top variables
+cor_subset <- cor_matrix[top_vars, top_vars]
+
+# Create heatmap using corrplot
+png("nfl/correlation_heatmap.png", width = 1200, height = 1000, res = 150)
+corrplot(cor_subset, 
+         method = "color",
+         type = "upper",
+         order = "original",
+         tl.cex = 0.7,
+         tl.col = "black",
+         tl.srt = 45,
+         addCoef.col = "black",
+         number.cex = 0.5,
+         col = colorRampPalette(c("#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061"))(200),
+         diag = FALSE,
+         title = "Correlation Heatmap: Team Statistics vs Win (Top 30 Variables)",
+         mar = c(0, 0, 2, 0))
+dev.off()
+
+cat("Correlation heatmap saved to: nfl/correlation_heatmap.png\n")
+cat("Top 10 variables most correlated with 'win':\n")
+print(head(win_correlations[names(win_correlations) != "win"], 10))
+cat("\n")
+
 # Fit Linear Regression Model
 # ---------------------------
 
 # Win as dependent variable (0 or 1 per game), all other numeric variables as predictors
 lm_model <- lm(win ~ . - season - team - week - season_type - opponent_team - loss - tie - game_id - result,
                data = team_stats_clean)
+
+epa_model <- lm(win ~ passing_epa + rushing_epa + receiving_epa,
+                data = team_stats_clean)
