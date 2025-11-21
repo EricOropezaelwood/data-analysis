@@ -52,7 +52,9 @@ team_stats_game <- team_stats_game %>%
 # ============================================================
 
 cat("\n=== Data Cleaning Report ===\n")
-cat("Initial dimensions:", nrow(team_stats_game), "rows,", ncol(team_stats_game), "columns\n\n")
+cat("Initial dimensions:",
+    nrow(team_stats_game), "rows,",
+    ncol(team_stats_game), "columns\n\n")
 
 # Remove rows with missing outcome variable
 team_stats_clean <- team_stats_game %>%
@@ -63,7 +65,7 @@ numeric_cols <- team_stats_clean %>%
   select(where(is.numeric)) %>%
   select(-win, -loss, -tie)
 
-# THIS REALLY HELPS THE NAN ISSUES, JUST SAYIN' <<<<------------------------------------
+# THIS REALLY HELPS THE NAN ISSUES, JUST SAYIN' <<<<--------------
 # Check for columns with high proportion of NAs (>50%)
 high_na_cols <- team_stats_clean %>%
   summarise(across(everything(), ~mean(is.na(.)))) %>%
@@ -105,11 +107,13 @@ mostly_zero_cols <- team_stats_clean %>%
   names()
 
 if(length(mostly_zero_cols) > 0) {
-  cat("Warning:", length(mostly_zero_cols), "columns are >95% zeros (keeping but may cause issues):",
+  cat("Warning:", length(mostly_zero_cols), 
+      "columns are >95% zeros (keeping but may cause issues):\n\n",
       paste(head(mostly_zero_cols, 5), collapse = ", "))
   if(length(mostly_zero_cols) > 5) cat(" ...")
   cat("\n")
-  # Optionally remove these: team_stats_clean <- team_stats_clean %>% select(-all_of(mostly_zero_cols))
+  # Optionally remove these: team_stats_clean <- team_stats_clean
+  # %>% select(-all_of(mostly_zero_cols))
 }
 
 # Remove rows with any remaining NAs in predictors
@@ -122,7 +126,9 @@ if(rows_removed > 0) {
   cat("Removed", rows_removed, "rows with NA values\n")
 }
 
-cat("\nFinal dimensions:", nrow(team_stats_clean), "rows,", ncol(team_stats_clean), "columns\n")
+cat("\nFinal dimensions:",
+    nrow(team_stats_clean), "rows,",
+    ncol(team_stats_clean), "columns\n")
 cat("=== End Cleaning Report ===\n\n")
 
 # Correlation Heatmap
@@ -142,27 +148,47 @@ cor_matrix <- cor(numeric_data, use = "complete.obs")
 # Create correlation heatmap focusing on correlations with 'win'
 # Sort variables by correlation with win for better visualization
 win_correlations <- cor_matrix[, "win"]
-win_correlations <- win_correlations[order(abs(win_correlations), decreasing = TRUE)]
-top_vars <- names(win_correlations)[seq_len(min(30, length(win_correlations)))]  # Top 30 variables
+win_correlations <- win_correlations[
+  order(abs(win_correlations), decreasing = TRUE)
+]
+top_vars <- names(win_correlations)[
+  seq_len(min(30, length(win_correlations)))
+]  # Top 30 variables
 
 # Subset correlation matrix to top variables
 cor_subset <- cor_matrix[top_vars, top_vars]
 
-# Create heatmap using corrplot
-png("nfl/correlation_heatmap.png", width = 1200, height = 1000, res = 150)
-corrplot(cor_subset, 
-         method = "color",
-         type = "upper",
-         order = "original",
-         tl.cex = 0.7,
-         tl.col = "black",
-         tl.srt = 45,
-         addCoef.col = "black",
-         number.cex = 0.5,
-         col = colorRampPalette(c("#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061"))(200),
-         diag = FALSE,
-         title = "Correlation Heatmap: Team Statistics vs Win (Top 30 Variables)",
-         mar = c(0, 0, 2, 0))
+# Create heatmap using base R heatmap() function with clustering
+# This automatically groups similar variables together using hierarchical
+# clustering and displays dendrograms to show relationships
+png("/Users/quixote/Coding/data-analysis/nfl/correlation_heatmap.png",
+    width = 1400, height = 1300, res = 150)
+
+# Custom color palette (red for negative, white for zero, blue for positive)
+heatmap_colors <- colorRampPalette(
+  c("#67001f", "#d6604d", "#f7f7f7", "#4393c3", "#053061")
+)(200)
+
+# Set margins to ensure title is visible
+par(oma = c(0, 0, 3, 0))  # Outer margins: bottom, left, top, right
+# par(las = 1)  # Rotate axis labels to be horizontal
+
+# Create heatmap with clustering
+# Rowv and Colv = TRUE enables hierarchical clustering on both rows and columns
+# scale = "none" because correlation values are already normalized (-1 to 1)
+# margins adjusted for better label visibility
+heatmap(cor_subset,
+        Rowv = TRUE,           # Cluster rows (variables)
+        Colv = TRUE,           # Cluster columns (variables)
+        scale = "none",        # Don't scale (correlations already normalized)
+        col = heatmap_colors,  # Color scheme
+        symm = TRUE,           # Symmetric matrix (correlation is symmetric)
+        margins = c(15, 12),   # Margins: bottom (x-axis), left (y-axis)
+        cexRow = 0.7,          # Row label size
+        cexCol = 0.8,          # Column label size
+        main = paste0("Correlation Heatmap: Team Statistics vs Win ",
+                      "(Top 30 Variables)\nwith Hierarchical Clustering"))
+
 dev.off()
 
 cat("Correlation heatmap saved to: nfl/correlation_heatmap.png\n")
@@ -173,8 +199,10 @@ cat("\n")
 # Fit Linear Regression Model
 # ---------------------------
 
-# Win as dependent variable (0 or 1 per game), all other numeric variables as predictors
-lm_model <- lm(win ~ . - season - team - week - season_type - opponent_team - loss - tie - game_id - result,
+# Win as dependent variable (0 or 1 per game),
+# all other numeric variables as predictors
+lm_model <- lm(win ~ . - season - team - week - season_type -
+                 opponent_team - loss - tie - game_id - result,
                data = team_stats_clean)
 
 epa_model <- lm(win ~ passing_epa + rushing_epa + receiving_epa,
