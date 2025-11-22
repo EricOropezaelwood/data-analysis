@@ -22,6 +22,7 @@
 
 5. **Explore correlations between team stats and wins**
 
+   ![Correlations with win](./correlations_with_win.png)
    ![Correlation Heatmap](./correlation_heatmap.png)
 
 6. **Feature selection and preparation**
