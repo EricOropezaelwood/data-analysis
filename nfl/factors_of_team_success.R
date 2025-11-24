@@ -177,7 +177,8 @@ win_correlations <- win_correlations[!names(win_correlations) %in% excluded_vars
 win_correlations <- win_correlations[order(abs(win_correlations), decreasing = TRUE)]
 
 # Select top explanatory variables based on correlation with "win"
-top_explanatory_vars <- names(win_correlations)[seq_len(min(30, length(win_correlations)))] # Top 30 explanatory variables
+# Top 30 explanatory variables
+top_explanatory_vars <- names(win_correlations)[seq_len(min(30, length(win_correlations)))]
 
 # Subset correlation matrix to explanatory variables only
 cor_subset <- cor_matrix[top_explanatory_vars, top_explanatory_vars]
@@ -185,7 +186,10 @@ cor_subset <- cor_matrix[top_explanatory_vars, top_explanatory_vars]
 # Verify "win" is NOT in the subset (it's the response variable)
 cat("\n=== Correlation Heatmap Info ===\n")
 cat("Total explanatory variables in heatmap:", nrow(cor_subset), "\n")
-cat("'win' excluded from heatmap (response variable):", !"win" %in% rownames(cor_subset), "\n")
+cat(
+  "'win' excluded from heatmap (response variable):",
+  !"win" %in% rownames(cor_subset), "\n"
+)
 cat("\nTop 10 explanatory variables most correlated with 'win':\n")
 print(head(win_correlations[names(win_correlations) != "win"], 10))
 cat("\nCorrelations with 'win' (response variable):\n")
