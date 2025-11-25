@@ -1,10 +1,9 @@
-library(nflreadr)
-library(dplyr)
-library(ggplot2)
-library(corrplot)
-# Additional libraries for logistic regression evaluation (following Statology guide)
-library(pscl)  # For McFadden's R²
-library(caret)  # For variable importance
+library(nflreadr) # NFL data
+library(dplyr) # Data manipulation
+library(ggplot2) # Nice plotting library
+library(corrplot) # Correlation heatmap
+library(pscl)  # McFadden's R²
+library(caret)  # Variable importance
 
 # Disable scientific notation for model summary
 options(scipen = 999)
