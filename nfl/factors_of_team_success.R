@@ -2,6 +2,13 @@ library(nflreadr)
 library(dplyr)
 library(ggplot2)
 library(corrplot)
+# Additional libraries for logistic regression evaluation (following Statology guide)
+library(pscl)  # For McFadden's R²
+library(caret)  # For variable importance
+
+# Disable scientific notation for model summary
+options(scipen = 999)
+
 
 # Set seasons for analysis
 years <- c(2022, 2023, 2024, 2025)
@@ -263,3 +270,77 @@ dev.off()
 
 cat("Correlations with 'win' vis saved to: nfl/correlations_with_win.png\n")
 cat("(Shows how strongly each explanatory variable correlates with 'win')\n\n")
+
+# Prepare dataset for logistic regression using top explanatory variables
+# Select only the top explanatory variables and the outcome variable
+model_data <- team_stats_clean %>%
+  select(all_of(top_explanatory_vars), win)
+
+cat("\n=== Logistic Regression Model Setup ===\n")
+cat("Number of observations:", nrow(model_data), "\n")
+cat("Number of explanatory variables:", length(top_explanatory_vars), "\n")
+cat("Top explanatory variables:\n")
+print(top_explanatory_vars)
+cat("\n")
+
+# Step 2: Create Training and Test Samples
+# Use 70% of dataset as training set and remaining 30% as testing set
+set.seed(103) # Set seed for reproducibility
+sample <- sample(c(TRUE, FALSE),
+                 nrow(model_data),
+                 replace = TRUE,
+                 prob = c(0.7, 0.3))
+train_data <- model_data[sample, ]
+test_data <- model_data[!sample, ]
+
+# Step 3: Fit the Logistic Regression Model
+cat("=== Step 3: Fitting Logistic Regression Model ===\n")
+cat("Model formula: win ~ [top explanatory variables]\n")
+cat("Target: Predict whether a team wins (1) or loses/ties (0) based on team statistics\n\n")
+
+# Fit logistic regression model
+log_model <- glm(win ~ ., data = train_data, family = "binomial")
+
+
+
+# View model summary
+cat("=== Model Summary ===\n")
+summary(log_model)
+
+# Step 4: Assess Model Fit
+cat("\n=== Step 4: Assessing Model Fit ===\n")
+
+# McFadden's R² (values over 0.40 indicate good fit)
+cat("\n--- McFadden's R² ---\n")
+mcfadden_r2 <- pscl::pR2(log_model)["McFadden"]
+cat("McFadden's R²:", round(mcfadden_r2, 4), "\n")
+if (mcfadden_r2 > 0.40) {
+  cat("Interpretation: Model fits the data very well (R² > 0.40)\n")
+} else if (mcfadden_r2 > 0.20) {
+  cat("Interpretation: Model has moderate fit (R² between 0.20-0.40)\n")
+} else {
+  cat("Interpretation: Model has limited predictive power (R² < 0.20)\n")
+}
+
+# Variable Importance
+cat("\n--- Variable Importance ---\n")
+# compute the importance of each predictor variable in the model
+var_importance <- caret::varImp(log_model)
+cat("Variable importance (higher values = more important):\n")
+print(var_importance)
+
+# Step 5: Use the Model to Make Predictions
+cat("\n=== Step 5: Making Predictions ===\n")
+
+# Predictions on test set
+test_pred_probs <- predict(log_model, newdata = test_data, type = "response")
+test_pred_class <- ifelse(test_pred_probs > 0.5, 1, 0)
+
+# Create confusion matrix
+cat("\n--- Confusion Matrix (Test Set) ---\n")
+confusion_matrix <- table(Actual = test_data$win, Predicted = test_pred_class)
+print(confusion_matrix)
+
+# Calculate accuracy
+test_accuracy <- mean(test_pred_class == test_data$win, na.rm = TRUE)
+cat("\nTest Accuracy:", round(test_accuracy * 100, 2), "%\n")
