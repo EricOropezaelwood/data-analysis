@@ -1,5 +1,6 @@
 from nba_api.stats.endpoints import leaguegamelog
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from data_cleaning import clean_data
@@ -52,6 +53,37 @@ def get_league_game_log(season, use_cache=True):
                 return pickle.load(f)
         else:
             raise
+
+
+def get_multiple_seasons(seasons, use_cache=True):
+    if isinstance(seasons, (str, int)):
+        seasons = [seasons]
+
+    print(f"\nFetching data for {len(seasons)} season(s): {', '.join(map(str, seasons))}")
+    print("=" * 60)
+
+    all_data = []
+
+    for season in seasons:
+        try:
+            df = get_league_game_log(season, use_cache=use_cache)
+            df['SEASON'] = str(season)
+            all_data.append(df)
+            print(f"✓ Successfully loaded {season}: {len(df)} games")
+        except Exception as e:
+            print(f"✗ Failed to load {season}: {e}")
+
+    if not all_data:
+        raise ValueError("No data loaded for any season")
+
+    combined_df = pd.concat(all_data, ignore_index=True)
+    print(f"\n{'=' * 60}")
+    print(f"Total games across all seasons: {len(combined_df)}")
+    print(f"Seasons included: {sorted(combined_df['SEASON'].unique())}")
+    print(f"{'=' * 60}\n")
+
+    return combined_df
+
 
 # normalize the data
 #  standardization (Z-score normalization)
@@ -145,8 +177,8 @@ def find_significant_variables(data, target_col='WL', top_n=20, plot=True, save_
     
     # Remove the target column itself if present
     correlations = correlations.drop(labels=[target_col], errors='ignore')
-    # Remove obvious columns
-    correlations = correlations.drop(labels=['TEAM_ID'])
+    # Remove obvious columns that shouldn't be used as features
+    correlations = correlations.drop(labels=['TEAM_ID', 'SEASON'], errors='ignore')
     
     # Get top N correlations
     top_correlations = correlations.head(top_n)
@@ -159,11 +191,27 @@ def find_significant_variables(data, target_col='WL', top_n=20, plot=True, save_
 
 
 if __name__ == "__main__":
-    # get the game log for the given season
-    game_log = get_league_game_log(2025)
+    # ========== CONFIGURE SEASONS HERE ==========
+    # Option 1: Single season
+    # SEASONS = 2025
+
+    # Option 2: Multiple seasons
+    SEASONS = [2023, 2024, 2025]
+
+    # Option 3: Season with format 'YYYY-YY'
+    # SEASONS = ['2022-23', '2023-24', '2024-25']
+    # ============================================
+
+    # Get the game log data
+    game_log = get_multiple_seasons(SEASONS)
     
     # Clean the data
     cleaned_data = clean_data(game_log, target_col='WL')
+    print("Cleaned data head and tail:")
+    print(cleaned_data.head())
+    print("\n")
+    print(cleaned_data.tail())
+    print("\n")
     
     # Find significant variables (before normalization)
     # print("Finding Significant Variables for WL")
@@ -182,23 +230,23 @@ if __name__ == "__main__":
     print("XGBoost Feature Importance Analysis")
     print("="*60)
 
-    print("\n1. ALL FEATURES:")
-    top_features, train_acc, test_acc = find_top_features(
-        cleaned_data,
-        target_col='WL',
-        top_n=20
-    )
-    print(f"Model Accuracy - Train: {train_acc:.3f}, Test: {test_acc:.3f}")
-    print("\nTop features by XGBoost gain:")
-    for feature, gain in top_features.items():
-        print(f"  {feature}: {gain:.2f}")
+    # print("\n1. ALL FEATURES:")
+    # top_features, train_acc, test_acc = find_top_features(
+    #     cleaned_data,
+    #     target_col='WL',
+    #     top_n=20
+    # )
+    # print(f"Model Accuracy - Train: {train_acc:.3f}, Test: {test_acc:.3f}")
+    # print("\nTop features by XGBoost gain:")
+    # for feature, gain in top_features.items():
+    #     print(f"  {feature}: {gain:.2f}")
 
-    print("\n2. EXCLUDING PLUS_MINUS (to see other important features):")
+    print("\n2. EXCLUDING PLUS_MINUS and other factors that don't make sense to use as features:")
     top_features_no_pm, train_acc_no_pm, test_acc_no_pm = find_top_features(
         cleaned_data,
         target_col='WL',
         top_n=20,
-        exclude_features=['PLUS_MINUS']
+        exclude_features=['PLUS_MINUS', 'MIN']
     )
     print(f"Model Accuracy - Train: {train_acc_no_pm:.3f}, Test: {test_acc_no_pm:.3f}")
     print("\nTop features by XGBoost gain:")

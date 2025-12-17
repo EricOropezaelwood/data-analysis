@@ -15,8 +15,13 @@ def find_top_features(data, target_col='WL', top_n=20, test_size=0.2, random_sta
     # exclude the target column and any specified features
     if exclude_features is None:
         exclude_features = []
+
+    # Always exclude these non-predictive ID/metadata columns
+    auto_exclude = ['TEAM_ID', 'SEASON', 'GAME_ID']
+    all_exclusions = list(set(exclude_features + auto_exclude))
+
     feature_cols = [col for col in data_copy.select_dtypes(include=[np.number]).columns
-                    if col != target_col and col not in exclude_features]
+                    if col != target_col and col not in all_exclusions]
 
     # split the data into training and testing sets
     X = data_copy[feature_cols]
