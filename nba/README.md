@@ -8,3 +8,4 @@
 
 ##### Considerations
 - Explore adding in Player data to Team data and see which factors could be significant
+- XGBoost as the model to use

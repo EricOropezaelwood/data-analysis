@@ -3,16 +3,55 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from data_cleaning import clean_data
+from xgboost_analysis import find_top_features
+import pickle
+from pathlib import Path
+import time
+
 
 # Set modern seaborn style
 sns.set_style("whitegrid")
 sns.set_palette("husl")
 plt.rcParams['figure.figsize'] = (10, 8)
 
-# from nba_api 
-def get_league_game_log(season):
-    game_log = leaguegamelog.LeagueGameLog(season=season)
-    return game_log.get_data_frames()[0]
+# from nba_api
+def get_league_game_log(season, use_cache=True):
+    cache_file = Path(f'game_log_{season}.pkl')
+
+    # caching to help with rate limiting
+    if use_cache and cache_file.exists():
+        print(f"Loading cached data from {cache_file}")
+        with open(cache_file, 'rb') as f:
+            return pickle.load(f)
+
+    print(f"Fetching game log for {season} season from NBA API...")
+
+    try:
+        game_log = leaguegamelog.LeagueGameLog(
+            season=season,
+            timeout=120,
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://www.stats.nba.com/'
+            }
+        )
+        df = game_log.get_data_frames()[0]
+
+        with open(cache_file, 'wb') as f:
+            pickle.dump(df, f)
+        print(f"Data cached to {cache_file}")
+
+        return df
+
+    except Exception as e:
+        print(f"Attempt failed: {e}")
+        if cache_file.exists():
+            print(f"Falling back to cached data from {cache_file}")
+            with open(cache_file, 'rb') as f:
+                return pickle.load(f)
+        else:
+            raise
 
 # normalize the data
 #  standardization (Z-score normalization)
@@ -120,23 +159,51 @@ def find_significant_variables(data, target_col='WL', top_n=20, plot=True, save_
 
 
 if __name__ == "__main__":
-    # get the game log for the 2025 season
+    # get the game log for the given season
     game_log = get_league_game_log(2025)
     
     # Clean the data
     cleaned_data = clean_data(game_log, target_col='WL')
     
     # Find significant variables (before normalization)
-    print("Finding Significant Variables for WL")
-    significant_vars = find_significant_variables(
-        cleaned_data, 
-        target_col='WL', 
-        top_n=20, 
-        plot=True,
-        save_path='correlations_with_wl.png'
+    # print("Finding Significant Variables for WL")
+    # significant_vars = find_significant_variables(
+    #     cleaned_data,
+    #     target_col='WL',
+    #     top_n=20,
+    #     plot=True,
+    #     save_path='correlations_with_wl.png'
+    # )
+    # print("\nTop 20 variables most correlated with WL:")
+    # print(significant_vars)
+
+    # XGBoost analysis for feature importance
+    print("\n" + "="*60)
+    print("XGBoost Feature Importance Analysis")
+    print("="*60)
+
+    print("\n1. ALL FEATURES:")
+    top_features, train_acc, test_acc = find_top_features(
+        cleaned_data,
+        target_col='WL',
+        top_n=20
     )
-    print("\nTop 20 variables most correlated with WL:")
-    print(significant_vars)
-    
+    print(f"Model Accuracy - Train: {train_acc:.3f}, Test: {test_acc:.3f}")
+    print("\nTop features by XGBoost gain:")
+    for feature, gain in top_features.items():
+        print(f"  {feature}: {gain:.2f}")
+
+    print("\n2. EXCLUDING PLUS_MINUS (to see other important features):")
+    top_features_no_pm, train_acc_no_pm, test_acc_no_pm = find_top_features(
+        cleaned_data,
+        target_col='WL',
+        top_n=20,
+        exclude_features=['PLUS_MINUS']
+    )
+    print(f"Model Accuracy - Train: {train_acc_no_pm:.3f}, Test: {test_acc_no_pm:.3f}")
+    print("\nTop features by XGBoost gain:")
+    for feature, gain in top_features_no_pm.items():
+        print(f"  {feature}: {gain:.2f}")
+
     # Normalize the data
- 
+

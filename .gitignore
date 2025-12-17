@@ -48,5 +48,9 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# all png files
+# python cache
+__pycache__/
+*.pyc
 
+# pickle files
+*.pkl
