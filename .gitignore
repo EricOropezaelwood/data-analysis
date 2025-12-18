@@ -54,3 +54,13 @@ __pycache__/
 
 # pickle files
 *.pkl
+
+# predictions
+nba/predict_games.py
+
+# DS Store
+.DS_Store
+
+# csv files
+*.csv
+

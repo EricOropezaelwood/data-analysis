@@ -1,0 +1,43 @@
+{
+  "description": "Configuration for pre-game feature engineering",
+  "rolling_window": 10,
+  "season_column": "SEASON",
+  "stat_columns": [
+    "PTS",
+    "FGM",
+    "FGA",
+    "FG_PCT",
+    "FG3M",
+    "FG3A",
+    "FG3_PCT",
+    "FTM",
+    "FTA",
+    "FT_PCT",
+    "OREB",
+    "DREB",
+    "REB",
+    "AST",
+    "STL",
+    "BLK",
+    "TOV",
+    "PF"
+  ],
+  "feature_types": [
+    {
+      "name": "rolling_avg",
+      "suffix": "_ROLLING_AVG",
+      "description": "Rolling average over last N games",
+      "enabled": true
+    }
+  ],
+  "exclude_from_model": [
+    "WL",
+    "TEAM_ID",
+    "SEASON",
+    "GAME_ID",
+    "WIN",
+    "TEAM_ABBREVIATION",
+    "TEAM_NAME",
+    "GAME_DATE"
+  ]
+}

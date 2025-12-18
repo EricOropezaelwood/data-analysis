@@ -6,3 +6,4 @@ seaborn
 statsmodels
 xgboost
 scikit-learn
+rich
