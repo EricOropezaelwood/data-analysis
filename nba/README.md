@@ -20,4 +20,5 @@ The code will:
 ### Model Performance
 
 ###### 18DEC2025
-- 53.6%
+- Rolling Window -- 10 days
+- 57.0%
