@@ -1,22 +1,12 @@
 from nba_api.stats.endpoints import leaguegamelog
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from data_cleaning import clean_data
-from preprocessing import create_pregame_features, compare_pregame_vs_postgame
+from preprocessing import create_pregame_features
 from xgboost_analysis import find_top_features
 from save_results import save_test_results_to_csv
 import pickle
 from pathlib import Path
 from datetime import datetime
-import time
-
-
-# Set modern seaborn style
-sns.set_style("whitegrid")
-sns.set_palette("husl")
-plt.rcParams['figure.figsize'] = (10, 8)
 
 # from nba_api
 def get_league_game_log(season, use_cache=True, force_refresh=False):
@@ -133,41 +123,6 @@ def get_multiple_seasons(seasons, use_cache=True, force_refresh=False):
     print(f"{'=' * 60}\n")
 
     return combined_df
-
-def find_significant_variables(data, target_col='WL', top_n=20, plot=True, save_path=None):
-    # Create a copy to avoid modifying original data
-    data_copy = data.copy()
-    
-    # Convert target column to numeric if it's string (e.g., 'W'/'L' -> 1/0)
-    if data_copy[target_col].dtype == 'object':
-        # Map W to 1, L to 0
-        data_copy[target_col] = data_copy[target_col].map({'W': 1, 'L': 0})
-    
-    # Select only numeric columns
-    numeric_cols = data_copy.select_dtypes(include=[np.number]).columns
-    
-    # Calculate correlations with target column
-    correlations = data_copy[numeric_cols].corrwith(data_copy[target_col])
-    
-    # Sort by absolute correlation (descending)
-    correlations = correlations.reindex(
-        correlations.abs().sort_values(ascending=False).index
-    )
-    
-    # Remove the target column itself if present
-    correlations = correlations.drop(labels=[target_col], errors='ignore')
-    # Remove obvious columns that shouldn't be used as features
-    correlations = correlations.drop(labels=['TEAM_ID', 'SEASON'], errors='ignore')
-    
-    # Get top N correlations
-    top_correlations = correlations.head(top_n)
-    
-    # Plot correlations if requested
-    if plot:
-        plot_correlations(top_correlations, target_col=target_col, save_path=save_path)
-    
-    return top_correlations
-
 
 if __name__ == "__main__":
     # ========== CONFIGURE SEASONS HERE ==========
