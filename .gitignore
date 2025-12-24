@@ -64,3 +64,8 @@ nba/predict_games.py
 # csv files
 *.csv
 
+
+# vs code files
+.vscode/
+
+.claude/
