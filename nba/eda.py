@@ -155,50 +155,57 @@ if __name__ == "__main__":
     print(injuries_log)
 
     # # Clean the data
-    # cleaned_data = clean_data(game_log, target_col='WL')
+    cleaned_data = clean_data(game_log, target_col="WL")
 
     # # Create pre-game features (rolling averages, season stats, etc.)
     # # This ensures we only use information available BEFORE each game
     # # Features are defined in features_config.json
-    # cleaned_data = create_pregame_features(cleaned_data)
+    cleaned_data = create_pregame_features(cleaned_data)
 
-    # # Show date range in cleaned data
-    # if 'GAME_DATE' in cleaned_data.columns:
-    #     dates = pd.to_datetime(cleaned_data['GAME_DATE'])
-    #     print(f"\n{'='*60}")
-    #     print("CLEANED DATA DATE RANGE")
-    #     print(f"{'='*60}")
-    #     print(f"Total games: {len(cleaned_data)}")
-    #     print(f"Earliest game: {dates.min().strftime('%Y-%m-%d')}")
-    #     print(f"Latest game: {dates.max().strftime('%Y-%m-%d')}")
-    #     print(f"Date span: {(dates.max() - dates.min()).days} days")
+    # Show date range in cleaned data
+    if "GAME_DATE" in cleaned_data.columns:
+        dates = pd.to_datetime(cleaned_data["GAME_DATE"])
+        print(f"\n{'='*60}")
+        print("CLEANED DATA DATE RANGE")
+        print(f"{'='*60}")
+        print(f"Total games: {len(cleaned_data)}")
+        print(f"Earliest game: {dates.min().strftime('%Y-%m-%d')}")
+        print(f"Latest game: {dates.max().strftime('%Y-%m-%d')}")
+        print(f"Date span: {(dates.max() - dates.min()).days} days")
 
-    #     # Show games by season
-    #     if 'SEASON' in cleaned_data.columns:
-    #         print(f"\nGames by season:")
-    #         for season in sorted(cleaned_data['SEASON'].unique()):
-    #             season_data = cleaned_data[cleaned_data['SEASON'] == season]
-    #             season_dates = pd.to_datetime(season_data['GAME_DATE'])
-    #             print(f"  {season}: {len(season_data)} games ({season_dates.min().strftime('%Y-%m-%d')} to {season_dates.max().strftime('%Y-%m-%d')})")
-    #     print(f"{'='*60}\n")
+        # Show games by season
+        if "SEASON" in cleaned_data.columns:
+            print(f"\nGames by season:")
+            for season in sorted(cleaned_data["SEASON"].unique()):
+                season_data = cleaned_data[cleaned_data["SEASON"] == season]
+                season_dates = pd.to_datetime(season_data["GAME_DATE"])
+                print(
+                    f"  {season}: {len(season_data)} games ({season_dates.min().strftime('%Y-%m-%d')} to {season_dates.max().strftime('%Y-%m-%d')})"
+                )
+        print(f"{'='*60}\n")
 
-    # # XGBoost analysis for feature importance
-    # print("\n" + "="*60)
-    # print("XGBoost Feature Importance Analysis")
-    # print("="*60)
+    # XGBoost analysis for feature importance
+    print("\n" + "=" * 60)
+    print("XGBoost Feature Importance Analysis")
+    print("=" * 60)
 
-    # print("\n2. USING PRE-GAME FEATURES (no data leakage):")
-    # top_features_no_pm, train_acc_no_pm, test_acc_no_pm, X_test, y_test, y_pred, y_pred_proba = find_top_features(
-    #     cleaned_data,
-    #     target_col='WL',
-    #     top_n=20,
-    #     exclude_features=['PLUS_MINUS', 'MIN']
-    # )
+    print("\n2. USING PRE-GAME FEATURES (no data leakage):")
+    (
+        top_features_no_pm,
+        train_acc_no_pm,
+        test_acc_no_pm,
+        X_test,
+        y_test,
+        y_pred,
+        y_pred_proba,
+    ) = find_top_features(
+        cleaned_data, target_col="WL", top_n=20, exclude_features=["PLUS_MINUS", "MIN"]
+    )
 
-    # print(f"Model Accuracy - Train: {train_acc_no_pm:.3f}, Test: {test_acc_no_pm:.3f}")
-    # print("\nTop features by XGBoost gain:")
-    # for feature, gain in top_features_no_pm.items():
-    #     print(f"  {feature}: {gain:.2f}")
+    print(f"Model Accuracy - Train: {train_acc_no_pm:.3f}, Test: {test_acc_no_pm:.3f}")
+    print("\nTop features by XGBoost gain:")
+    for feature, gain in top_features_no_pm.items():
+        print(f"  {feature}: {gain:.2f}")
 
     # # Save test results to CSV (for me to explore)
     # csv_file = save_test_results_to_csv(
