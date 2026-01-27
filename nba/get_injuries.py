@@ -193,3 +193,53 @@ def get_season_game_injuries(
     print(f"{'='*60}\n")
 
     return combined_injuries
+
+
+def merge_injuries_with_games(game_log, injuries_log):
+    """
+    Merge injury data with game log by aggregating injuries to team-level.
+
+    Args:
+        game_log: DataFrame with game data (one row per team per game)
+        injuries_log: DataFrame with injury data (one row per injured player)
+
+    Returns:
+        DataFrame with game_log plus INJURED_PLAYERS column
+    """
+    if injuries_log is None or injuries_log.empty:
+        print("No injury data available, adding INJURED_PLAYERS column with 0s")
+        result = game_log.copy()
+        result['INJURED_PLAYERS'] = 0
+        return result
+
+    print(f"\n{'='*60}")
+    print("MERGING INJURY DATA WITH GAME LOG")
+    print(f"{'='*60}")
+
+    # Aggregate injuries to team-level (count per team per game)
+    injury_counts = injuries_log.groupby(['gameId', 'teamId']).size().reset_index(name='INJURED_PLAYERS')
+
+    # Rename columns to match game_log format
+    injury_counts = injury_counts.rename(columns={
+        'gameId': 'GAME_ID',
+        'teamId': 'TEAM_ID'
+    })
+
+    print(f"Unique games with injuries: {injury_counts['GAME_ID'].nunique()}")
+    print(f"Total team-game injury records: {len(injury_counts)}")
+
+    # Merge with game_log (left join to keep all games)
+    result = game_log.merge(injury_counts, on=['GAME_ID', 'TEAM_ID'], how='left')
+
+    # Fill NaN with 0 for games with no injuries
+    result['INJURED_PLAYERS'] = result['INJURED_PLAYERS'].fillna(0).astype(int)
+
+    games_with_injuries = (result['INJURED_PLAYERS'] > 0).sum()
+    games_without_injuries = (result['INJURED_PLAYERS'] == 0).sum()
+
+    print(f"Games with injuries: {games_with_injuries}")
+    print(f"Games without injuries: {games_without_injuries}")
+    print(f"Average injured players per team-game: {result['INJURED_PLAYERS'].mean():.2f}")
+    print(f"{'='*60}\n")
+
+    return result

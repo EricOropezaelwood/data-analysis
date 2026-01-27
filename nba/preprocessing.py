@@ -105,6 +105,11 @@ def get_feature_columns(data, config_path='features_config.json'):
             if col_name and col_name in data.columns:
                 feature_cols.append(col_name)
 
+    # Add additional features (direct columns like INJURED_PLAYERS)
+    for col_name in config.get('additional_features', []):
+        if col_name in data.columns:
+            feature_cols.append(col_name)
+
     print(f"\nUsing {len(feature_cols)} pre-game features from config (no data leakage)")
     return feature_cols
 

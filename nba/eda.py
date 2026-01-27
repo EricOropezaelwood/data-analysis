@@ -4,7 +4,7 @@ from data_cleaning import clean_data
 from preprocessing import create_pregame_features
 from xgboost_analysis import find_top_features
 from save_results import save_test_results_to_csv
-from get_injuries import get_single_game_injuries, get_season_game_injuries
+from get_injuries import get_single_game_injuries, get_season_game_injuries, merge_injuries_with_games
 import pickle
 from pathlib import Path
 from datetime import datetime
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     # SEASONS = 2025
 
     # Option 2: Multiple seasons
-    SEASONS = [2023, 2024, 2025]
+    SEASONS = [2023, 2024, 2025, 2026]
 
     # Option 3: Season with format 'YYYY-YY'
     # SEASONS = ['2022-23', '2023-24', '2024-25']
@@ -152,10 +152,11 @@ if __name__ == "__main__":
     # get injuries
     injuries_log = get_season_game_injuries(game_log)
 
-    print(injuries_log)
+    # merge injuries with game log
+    game_log_with_injuries = merge_injuries_with_games(game_log, injuries_log)
 
-    # # Clean the data
-    cleaned_data = clean_data(game_log, target_col="WL")
+    # Clean the data
+    cleaned_data = clean_data(game_log_with_injuries, target_col="WL")
 
     # # Create pre-game features (rolling averages, season stats, etc.)
     # # This ensures we only use information available BEFORE each game
@@ -207,14 +208,14 @@ if __name__ == "__main__":
     for feature, gain in top_features_no_pm.items():
         print(f"  {feature}: {gain:.2f}")
 
-    # # Save test results to CSV (for me to explore)
-    # csv_file = save_test_results_to_csv(
-    #     X_test=X_test,
-    #     y_test=y_test,
-    #     y_pred=y_pred,
-    #     y_pred_proba=y_pred_proba,
-    #     train_acc=train_acc_no_pm,
-    #     test_acc=test_acc_no_pm,
-    #     original_data=cleaned_data,
-    #     output_dir='test_results'
-    # )
+    # Save test results to CSV (for me to explore)
+    csv_file = save_test_results_to_csv(
+        X_test=X_test,
+        y_test=y_test,
+        y_pred=y_pred,
+        y_pred_proba=y_pred_proba,
+        train_acc=train_acc_no_pm,
+        test_acc=test_acc_no_pm,
+        original_data=cleaned_data,
+        output_dir="test_results",
+    )
