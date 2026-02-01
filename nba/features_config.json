@@ -1,6 +1,6 @@
 {
   "description": "Configuration for pre-game feature engineering",
-  "rolling_window": 9,
+  "rolling_window": 3,
   "season_column": "SEASON",
   "stat_columns": [
     "PTS",

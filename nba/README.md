@@ -14,23 +14,19 @@ The code will:
 The [eda.py](nba/eda.py) script does the following:
 
 1. **Data Collection**
-
    - Fetches NBA game logs for configured seasons using `get_multiple_seasons()`
    - Uses caching system (local files) to avoid redundant API calls and check for new games
    - Each season is cached separately for faster subsequent runs
 
 2. **Injury Data Collection**
-
    - Retrieves injury data for games using `get_season_game_injuries()`
    - Matches injury information with game data from boxscore endpoint
 
 3. **Data Cleaning**
-
    - Cleans raw game log data via `clean_data()` with target column set to "WL" (Win/Loss)
    - Prepares data for analysis by handling missing values and formatting
 
 4. **Feature Engineering**
-
    - Creates pre-game features using `create_pregame_features()`
    - Generates rolling averages and season statistics
    - Ensures only information available BEFORE each game is used (prevents data leakage)
@@ -59,3 +55,8 @@ The [eda.py](nba/eda.py) script does the following:
 
 - Rolling Window -- 10 days
 - 57.0%
+
+###### 01FEB2026
+
+- Rolling Window -- 3 days
+- 58.2%
