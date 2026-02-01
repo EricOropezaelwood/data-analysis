@@ -1,10 +1,14 @@
 from nba_api.stats.endpoints import leaguegamelog
 import pandas as pd
 from data_cleaning import clean_data
-from preprocessing import create_pregame_features
+from preprocessing import create_pregame_features, add_opponent_features
 from xgboost_analysis import find_top_features
 from save_results import save_test_results_to_csv
-from get_injuries import get_single_game_injuries, get_season_game_injuries, merge_injuries_with_games
+from get_injuries import (
+    get_single_game_injuries,
+    get_season_game_injuries,
+    merge_injuries_with_games,
+)
 import pickle
 from pathlib import Path
 from datetime import datetime
@@ -60,21 +64,36 @@ def get_league_game_log(season, use_cache=True, force_refresh=False):
             new_data["GAME_DATE"] = pd.to_datetime(new_data["GAME_DATE"])
             cached_data["GAME_DATE"] = pd.to_datetime(cached_data["GAME_DATE"])
 
-            # Find games not in cache (by GAME_ID if available, otherwise by date)
+            # Find games in API response that are missing from cache
             if "GAME_ID" in new_data.columns:
-                existing_game_ids = set(cached_data["GAME_ID"])
-                new_games = new_data[~new_data["GAME_ID"].isin(existing_game_ids)]
+                cached_game_ids = set(cached_data["GAME_ID"])
+                api_game_ids = set(new_data["GAME_ID"])
+
+                # Games in API but not in cache (could be new OR previously missed)
+                missing_from_cache = new_data[~new_data["GAME_ID"].isin(cached_game_ids)]
+
+                # Games in cache but not in API (shouldn't happen, but log if it does)
+                only_in_cache = cached_game_ids - api_game_ids
+                if only_in_cache:
+                    print(f"  Warning: {len(only_in_cache)} games in cache but not in API")
+
+                if len(missing_from_cache) > 0:
+                    print(f"  Found {len(missing_from_cache)} games missing from cache")
+                    df = pd.concat([cached_data, missing_from_cache], ignore_index=True)
+                    df = df.drop_duplicates(subset=["GAME_ID"], keep="last")
+                    df = df.sort_values("GAME_DATE").reset_index(drop=True)
+                else:
+                    print(f"  Cache is complete, no missing games")
+                    df = cached_data
             else:
                 latest_cached_date = cached_data["GAME_DATE"].max()
                 new_games = new_data[new_data["GAME_DATE"] > latest_cached_date]
-
-            if len(new_games) > 0:
-                print(f"  Found {len(new_games)} new games since cache")
-                df = pd.concat([cached_data, new_games], ignore_index=True)
-                df = df.sort_values("GAME_DATE").reset_index(drop=True)
-            else:
-                print(f"  No new games found, using cached data")
-                df = cached_data
+                if len(new_games) > 0:
+                    print(f"  Found {len(new_games)} new games since cache")
+                    df = pd.concat([cached_data, new_games], ignore_index=True)
+                    df = df.sort_values("GAME_DATE").reset_index(drop=True)
+                else:
+                    df = cached_data
         else:
             df = new_data
 
@@ -139,7 +158,7 @@ if __name__ == "__main__":
     # SEASONS = 2025
 
     # Option 2: Multiple seasons
-    SEASONS = [2023, 2024, 2025, 2026]
+    SEASONS = [2023, 2024, 2025]  # 2026 is future season with no games yet
 
     # Option 3: Season with format 'YYYY-YY'
     # SEASONS = ['2022-23', '2023-24', '2024-25']
@@ -162,6 +181,9 @@ if __name__ == "__main__":
     # # This ensures we only use information available BEFORE each game
     # # Features are defined in features_config.json
     cleaned_data = create_pregame_features(cleaned_data)
+
+    # Add opponent features (opponent's rolling averages and injuries)
+    cleaned_data = add_opponent_features(cleaned_data)
 
     # Show date range in cleaned data
     if "GAME_DATE" in cleaned_data.columns:
