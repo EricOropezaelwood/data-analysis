@@ -69,3 +69,7 @@ nba/predict_games.py
 .vscode/
 
 .claude/
+
+# model data
+nba/predictions/model.json
+nba/predictions/model.meta.txt

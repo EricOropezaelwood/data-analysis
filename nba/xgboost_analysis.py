@@ -18,6 +18,13 @@ def find_top_features(data, target_col='WL', top_n=20, test_size=0.2, random_sta
     feature_cols = get_feature_columns(data_copy)
     print(f"✓ Using pre-game features only (no data leakage)")
 
+    # Drop any explicitly excluded features (e.g. PLUS_MINUS, MIN)
+    if exclude_features:
+        excluded = [f for f in exclude_features if f in feature_cols]
+        if excluded:
+            print(f"  Excluding features: {excluded}")
+        feature_cols = [f for f in feature_cols if f not in exclude_features]
+
 
     # split the data into training and testing sets
     X = data_copy[feature_cols]
