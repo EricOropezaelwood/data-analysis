@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
 from preprocessing import get_feature_columns
 
 
@@ -54,9 +53,14 @@ def find_top_features(data, target_col='WL', top_n=20, test_size=0.2, random_sta
     model = xgb.XGBClassifier(
         random_state=random_state,
         eval_metric='logloss',
-        enable_categorical=False
+        enable_categorical=False,
+        n_estimators=500,
+        max_depth=6,
+        learning_rate=0.1,
+        early_stopping_rounds=10
     )
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
+    print(f"  Best iteration: {model.best_iteration}")
 
     importance = model.get_booster().get_score(importance_type='gain')
 

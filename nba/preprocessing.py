@@ -33,6 +33,16 @@ def create_pregame_features(data, config_path="features_config.json"):
     data = data.copy()
     data["GAME_DATE"] = pd.to_datetime(data["GAME_DATE"])
 
+    # Derive IS_HOME from MATCHUP column:
+    # "GSW vs. BKN" → home team (vs.)
+    # "GSW @ BKN"   → away team (@)
+    if "MATCHUP" in data.columns:
+        data["IS_HOME"] = data["MATCHUP"].str.contains(r"\bvs\b", case=False, regex=True).astype(int)
+        print(f"  Derived IS_HOME from MATCHUP ({data['IS_HOME'].sum()} home, {(data['IS_HOME']==0).sum()} away)")
+    else:
+        data["IS_HOME"] = 0
+        print("  Warning: MATCHUP column not found — IS_HOME defaulting to 0")
+
     # Sort by team and date (chronological order)
     data = data.sort_values(["TEAM_ID", "GAME_DATE"]).reset_index(drop=True)
 

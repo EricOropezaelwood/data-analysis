@@ -31,7 +31,8 @@
     }
   ],
   "additional_features": [
-    "INJURED_PLAYERS"
+    "INJURED_PLAYERS",
+    "IS_HOME"
   ],
   "exclude_from_model": [
     "WL",
