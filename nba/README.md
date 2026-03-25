@@ -9,6 +9,37 @@ The code will:
 - Add a `SEASON` column to identify which season each game belongs to
 - Run XGBoost analysis on the combined dataset
 
+## Setup & Usage
+
+This project uses a standard Python `venv` (not `uv`).
+
+### 1. Create and activate the virtual environment
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the scripts
+
+**Exploratory data analysis / feature importance:**
+```bash
+python eda.py
+```
+
+**Predict today's games:**
+```bash
+python predict_games.py
+```
+
+---
+
 ## EDA Process Overview
 
 The [eda.py](nba/eda.py) script does the following:
