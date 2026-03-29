@@ -158,7 +158,7 @@ if __name__ == "__main__":
     # SEASONS = 2025
 
     # Option 2: Multiple seasons
-    SEASONS = [2023, 2024, 2025]  # 2026 is future season with no games yet
+    SEASONS = [2023, 2024, 2025]  # 2025 = 2025-26 season (current); 2026 = 2026-27 (not started)
 
     # Option 3: Season with format 'YYYY-YY'
     # SEASONS = ['2022-23', '2023-24', '2024-25']
